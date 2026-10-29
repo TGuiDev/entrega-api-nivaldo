@@ -1,0 +1,116 @@
+classDiagram
+    direction LR
+
+    %% ===== Camada de Controle (Endpoints) =====
+    class LivroController {
+        -LivroService livroService
+        +listar() List~Livro~
+        +buscarPorId(Long id) Livro
+        +cadastrar(Livro livro) Livro
+        +atualizar(Long id, Livro livro) Livro
+        +remover(Long id) void
+    }
+
+    class EmprestimoController {
+        -EmprestimoService emprestimoService
+        +realizar(Long usuarioId, Long livroId) Emprestimo
+        +devolver(Long id) Emprestimo
+        +listarAtrasados() List~Emprestimo~
+    }
+
+    %% ===== Camada de Serviço (Regras de negócio) =====
+    class LivroService {
+        -LivroRepository livroRepository
+        +listarTodos() List~Livro~
+        +buscarPorId(Long id) Livro
+        +salvar(Livro livro) Livro
+        +excluir(Long id) void
+    }
+
+    class EmprestimoService {
+        -EmprestimoRepository emprestimoRepository
+        -LivroService livroService
+        +realizarEmprestimo(Long usuarioId, Long livroId) Emprestimo
+        +registrarDevolucao(Long id) Emprestimo
+        +buscarAtrasados() List~Emprestimo~
+    }
+
+    %% ===== Camada de Acesso a Dados =====
+    class LivroRepository {
+        <<interface>>
+        +findAll() List~Livro~
+        +findById(Long id) Livro
+        +save(Livro livro) Livro
+        +deleteById(Long id) void
+    }
+
+    class EmprestimoRepository {
+        <<interface>>
+        +findAll() List~Emprestimo~
+        +findById(Long id) Emprestimo
+        +save(Emprestimo e) Emprestimo
+        +findByStatus(StatusEmprestimo s) List~Emprestimo~
+    }
+
+    %% ===== Entidades (Modelo) =====
+    class Usuario {
+        -Long id
+        -String nome
+        -String email
+        -String telefone
+        +podeEmprestar() boolean
+    }
+
+    class Livro {
+        -Long id
+        -String titulo
+        -String isbn
+        -int anoPublicacao
+        -int quantidadeDisponivel
+        +estaDisponivel() boolean
+        +diminuirEstoque() void
+        +aumentarEstoque() void
+    }
+
+    class Autor {
+        -Long id
+        -String nome
+        -String nacionalidade
+    }
+
+    class Categoria {
+        -Long id
+        -String nome
+    }
+
+    class Emprestimo {
+        -Long id
+        -LocalDate dataEmprestimo
+        -LocalDate dataPrevistaDevolucao
+        -LocalDate dataDevolucao
+        -StatusEmprestimo status
+        +registrarDevolucao() void
+        +estaAtrasado() boolean
+        +calcularMulta() double
+    }
+
+    class StatusEmprestimo {
+        <<enumeration>>
+        ATIVO
+        DEVOLVIDO
+        ATRASADO
+    }
+
+    %% ===== Relacionamentos entre camadas =====
+    LivroController --> LivroService
+    EmprestimoController --> EmprestimoService
+    LivroService --> LivroRepository
+    EmprestimoService --> EmprestimoRepository
+    EmprestimoService --> LivroService
+
+    %% ===== Relacionamentos entre entidades =====
+    Autor "1..*" -- "0..*" Livro : escreve
+    Categoria "1" -- "0..*" Livro : classifica
+    Usuario "1" -- "0..*" Emprestimo : realiza
+    Livro "1" -- "0..*" Emprestimo : emprestado em
+    Emprestimo --> StatusEmprestimo

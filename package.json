@@ -1,0 +1,18 @@
+{
+  "name": "api-biblioteca",
+  "version": "1.0.0",
+  "description": "API REST de Biblioteca em Node.js (Express) seguindo o diagrama de classes",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "front:install": "npm --prefix frontend install",
+    "front:dev": "npm --prefix frontend run dev",
+    "front:build": "npm --prefix frontend run build"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.1"
+  }
+}

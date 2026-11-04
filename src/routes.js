@@ -2,6 +2,8 @@ const { Router } = require('express');
 const livroController = require('./controllers/LivroController');
 const emprestimoController = require('./controllers/EmprestimoController');
 const authController = require('./controllers/AuthController');
+const livroRepository = require('./repositories/LivroRepository');
+const emprestimoService = require('./services/EmprestimoService');
 const usuarioRepository = require('./repositories/UsuarioRepository');
 const autorRepository = require('./repositories/AutorRepository');
 const categoriaRepository = require('./repositories/CategoriaRepository');
@@ -31,6 +33,23 @@ rotas.get('/emprestimos', emprestimoController.listar);
 rotas.get('/emprestimos/atrasados', soBibliotecario, emprestimoController.listarAtrasados);
 rotas.post('/emprestimos', emprestimoController.realizar);
 rotas.put('/emprestimos/:id/devolucao', emprestimoController.devolver);
+
+// Painel do bibliotecário
+rotas.get('/estatisticas', soBibliotecario, async (req, res) => {
+  const [livros, usuarios, emprestimos] = await Promise.all([
+    livroRepository.findAll(),
+    usuarioRepository.findAll(),
+    emprestimoService.listarTodos({}),
+  ]);
+  res.json({
+    titulos: livros.length,
+    exemplaresDisponiveis: livros.reduce((soma, l) => soma + l.quantidadeDisponivel, 0),
+    usuarios: usuarios.length,
+    emprestimosAtivos: emprestimos.filter((e) => e.status === 'ATIVO').length,
+    emprestimosAtrasados: emprestimos.filter((e) => e.status === 'ATRASADO').length,
+    multaTotal: emprestimos.reduce((soma, e) => soma + e.calcularMulta(), 0),
+  });
+});
 
 // Consultas auxiliares
 rotas.get('/usuarios', soBibliotecario, async (req, res) => res.json(await usuarioRepository.findAll()));

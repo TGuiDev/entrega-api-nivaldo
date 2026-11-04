@@ -6,7 +6,13 @@ const HttpError = require('./utils/HttpError');
 const app = express();
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', 'public'))); // frontend
+
+// Front-end (build do Vite em frontend/dist). A navegação usa hash (#/), então "/" basta.
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
+
+// API disponível em /api (usada pelo front) e na raiz (compatível com requisicoes.http/Postman)
+app.get('/api/saude', (req, res) => res.json({ ok: true }));
+app.use('/api', rotas);
 app.use(rotas);
 
 // Rota não encontrada

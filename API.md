@@ -82,3 +82,21 @@ Endpoints auxiliares para consultar os dados de exemplo: `GET /emprestimos`, `GE
 - O prazo de devolução é de **7 dias**. Depois disso o empréstimo fica **ATRASADO**.
 - A multa é de **R$ 2,00 por dia de atraso**.
 - Um livro que já tem empréstimos não pode ser excluído (resposta **409**).
+
+## Front-end (Vite + TypeScript)
+
+SPA responsiva (mobile-first, tema claro/escuro) em `frontend/`, em TypeScript puro com Vite.
+
+- **Leitor:** catálogo com busca/filtros, empréstimo, devolução e acompanhamento de prazos e multas.
+- **Bibliotecário:** além disso, painel com estatísticas (`GET /estatisticas`), atrasados e CRUD do acervo.
+
+```bash
+npm install && npm run front:install
+npm start                 # API em http://localhost:3000
+npm run front:dev         # front em http://localhost:5173 (proxy /api -> :3000)
+
+npm run build             # gera frontend/dist; a API passa a servir o front em http://localhost:3000
+```
+
+A API responde tanto na raiz (`/livros`) quanto sob `/api` (`/api/livros`), prefixo usado pelo front.
+Login de demonstração: `ana@email.com` / `123456` (bibliotecária).

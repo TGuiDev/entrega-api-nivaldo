@@ -1,5 +1,5 @@
 import type {
-  Autor, Categoria, Emprestimo, Estatisticas, Livro, LivroForm, Sessao, Usuario,
+  Autor, AutorForm, Categoria, Emprestimo, Estatisticas, Livro, LivroForm, Sessao, Usuario,
 } from './types.ts';
 
 const CHAVE = 'biblioteca.sessao';
@@ -70,6 +70,9 @@ export const api = {
   removerLivro: (id: number) => req<void>('DELETE', `/livros/${id}`),
 
   autores: () => req<Autor[]>('GET', '/autores'),
+  criarAutor: (d: AutorForm) => req<Autor>('POST', '/autores', d),
+  atualizarAutor: (id: number, d: AutorForm) => req<Autor>('PUT', `/autores/${id}`, d),
+  removerAutor: (id: number) => req<void>('DELETE', `/autores/${id}`),
   categorias: () => req<Categoria[]>('GET', '/categorias'),
   usuarios: () => req<Usuario[]>('GET', '/usuarios'),
 

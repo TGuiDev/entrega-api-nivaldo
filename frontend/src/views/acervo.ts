@@ -1,6 +1,6 @@
 import type { Contexto } from '../main.ts';
 import { api } from '../api.ts';
-import type { Livro, LivroForm } from '../types.ts';
+import type { Autor, Livro, LivroForm } from '../types.ts';
 import { $, confirmar, html, icone, modal, montar, toast } from '../ui.ts';
 
 export async function viewAcervo({ conteudo }: Contexto) {
@@ -51,6 +51,9 @@ export async function viewAcervo({ conteudo }: Contexto) {
       }));
   };
 
+  const chipAutor = (a: Autor, marcado: boolean) =>
+    html`<label class="chip"><input type="checkbox" name="autor" value="${a.id}" ${marcado && 'checked'} /><span>${a.nome}</span></label>`;
+
   const formulario = (l?: Livro) => {
     const dlg = modal(html`
       <form class="modal-corpo form" id="f" novalidate>
@@ -69,7 +72,11 @@ export async function viewAcervo({ conteudo }: Contexto) {
         </div>
         <fieldset><legend>Autores</legend>
           <div class="chips">
-            ${autores.map((a) => html`<label class="chip"><input type="checkbox" name="autor" value="${a.id}" ${l?.autorIds.includes(a.id) && 'checked'} /><span>${a.nome}</span></label>`)}
+            ${autores.map((a) => chipAutor(a, l?.autorIds.includes(a.id) ?? false))}
+          </div>
+          <div class="autor-rapido">
+            <input id="novo-autor" placeholder="Autor não está na lista? Digite o nome" maxlength="150" aria-label="Nome do novo autor" />
+            <button type="button" class="btn sm" id="add-autor">Adicionar</button>
           </div>
         </fieldset>
         <p class="erro" id="erro" role="alert"></p>
@@ -78,6 +85,31 @@ export async function viewAcervo({ conteudo }: Contexto) {
           <button class="btn primary">Salvar</button>
         </div>
       </form>`);
+
+    // Cadastro rápido: cria o autor na hora e já o deixa marcado
+    const campo = $<HTMLInputElement>('#novo-autor', dlg)!;
+    const adicionar = async () => {
+      const nome = campo.value.trim();
+      if (!nome) return;
+      try {
+        const novo = await api.criarAutor({ nome, nacionalidade: '' });
+        autores.push(novo);
+        autor.set(novo.id, novo.nome);
+        $('.chips', dlg)!.insertAdjacentHTML('beforeend', chipAutor(novo, true).valor);
+        campo.value = '';
+        $('#erro', dlg)!.textContent = '';
+        toast('Autor cadastrado');
+      } catch (err) {
+        $('#erro', dlg)!.textContent = (err as Error).message;
+      }
+    };
+    $('#add-autor', dlg)!.addEventListener('click', adicionar);
+    campo.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        void adicionar();
+      }
+    });
 
     $<HTMLFormElement>('#f', dlg)!.addEventListener('submit', async (e) => {
       e.preventDefault();

@@ -1,90 +1,480 @@
 {
   "info": {
     "name": "API de Biblioteca",
-    "description": "Testes da API de Biblioteca (Node.js + Express).\n\n1. Rode a API com `npm start`.\n2. Importe esta coleção no Postman.\n3. Clique na coleção > Run para executar todos os testes em ordem.\n\nA coleção cria um livro de teste, faz um empréstimo, devolve e depois remove o livro, então pode ser executada várias vezes.",
+    "description": "Testes da API de Biblioteca (Node.js + Express).\n\n1. Rode a API com `npm start`.\n2. Importe esta coleção no Postman.\n3. Clique na coleção > Run para executar todos os testes em ordem.\n\nA pasta Autenticação faz login como bibliotecária e guarda o token na variável `token`, usada por todas as demais requisições. A coleção cria um autor e livros de teste, faz um empréstimo, devolve e remove o que for possível. O livro que teve empréstimo permanece no acervo (a API não permite excluí-lo, e isso também é testado), então cada execução deixa um livro de teste. A coleção pode ser executada várias vezes.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "livroId", "value": "" },
-    { "key": "emprestimoId", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "livroId",
+      "value": ""
+    },
+    {
+      "key": "emprestimoId",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "autorId",
+      "value": ""
+    },
+    {
+      "key": "livroTmpId",
+      "value": ""
+    }
   ],
   "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Login (bibliotecária)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana@email.com\",\n  \"senha\": \"123456\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Retorna token e perfil BIBLIOTECARIO', () => { pm.expect(r.token).to.be.a('string'); pm.expect(r.usuario.perfil).to.eql('BIBLIOTECARIO'); });",
+                  "pm.collectionVariables.set('token', r.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login com senha errada",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana@email.com\",\n  \"senha\": \"errada\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuário logado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É a Ana', () => pm.expect(pm.response.json().email).to.eql('ana@email.com'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Autores",
+      "item": [
+        {
+          "name": "Cadastrar autor",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/autores",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Autor de Teste Postman\",\n  \"nacionalidade\": \"Brasileira\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const a = pm.response.json();",
+                  "pm.test('Retorna o autor criado', () => { pm.expect(a.id).to.be.a('number'); pm.expect(a.nome).to.eql('Autor de Teste Postman'); });",
+                  "pm.collectionVariables.set('autorId', a.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cadastrar autor duplicado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/autores",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"autor de teste postman\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cadastrar autor sem nome",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/autores",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar autores",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/autores",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Lista contém o autor criado', () => pm.expect(pm.response.json().some((a) => a.id == pm.collectionVariables.get('autorId'))).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar autor por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/autores/{{autorId}}",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar autor",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/autores/{{autorId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Autor de Teste Postman\",\n  \"nacionalidade\": \"Portuguesa\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Nacionalidade atualizada', () => pm.expect(pm.response.json().nacionalidade).to.eql('Portuguesa'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir autor sem livros",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/autores/{{autorId}}",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir autor com livros",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/autores/1",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "Livros",
       "item": [
         {
           "name": "Listar livros",
-          "request": { "method": "GET", "url": "{{baseUrl}}/livros" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "pm.test('Retorna uma lista de livros', () => {",
-            "  const livros = pm.response.json();",
-            "  pm.expect(livros).to.be.an('array').that.is.not.empty;",
-            "  pm.expect(livros[0]).to.have.all.keys('id', 'titulo', 'isbn', 'anoPublicacao', 'quantidadeDisponivel', 'autorIds', 'categoriaId');",
-            "});"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/livros"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna uma lista de livros', () => {",
+                  "  const livros = pm.response.json();",
+                  "  pm.expect(livros).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(livros[0]).to.have.all.keys('id', 'titulo', 'isbn', 'anoPublicacao', 'quantidadeDisponivel', 'autorIds', 'categoriaId');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Buscar livro por ID",
-          "request": { "method": "GET", "url": "{{baseUrl}}/livros/1" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "pm.test('Retorna o livro de id 1', () => pm.expect(pm.response.json().id).to.eql(1));"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/livros/1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna o livro de id 1', () => pm.expect(pm.response.json().id).to.eql(1));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Cadastrar livro",
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/livros",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"titulo\": \"O Alienista\",\n  \"isbn\": \"978-8508133037\",\n  \"anoPublicacao\": 1882,\n  \"quantidadeDisponivel\": 2,\n  \"autorIds\": [1],\n  \"categoriaId\": 1\n}" }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"O Alienista\",\n  \"isbn\": \"978-8508133037\",\n  \"anoPublicacao\": 1882,\n  \"quantidadeDisponivel\": 2,\n  \"autorIds\": [1],\n  \"categoriaId\": 1\n}"
+            }
           },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 201 (criado)', () => pm.response.to.have.status(201));",
-            "const livro = pm.response.json();",
-            "pm.test('Livro criado com id e dados enviados', () => {",
-            "  pm.expect(livro.id).to.be.a('number');",
-            "  pm.expect(livro.titulo).to.eql('O Alienista');",
-            "  pm.expect(livro.quantidadeDisponivel).to.eql(2);",
-            "});",
-            "pm.collectionVariables.set('livroId', livro.id);"
-          ] } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 (criado)', () => pm.response.to.have.status(201));",
+                  "const livro = pm.response.json();",
+                  "pm.test('Livro criado com id e dados enviados', () => {",
+                  "  pm.expect(livro.id).to.be.a('number');",
+                  "  pm.expect(livro.titulo).to.eql('O Alienista');",
+                  "  pm.expect(livro.quantidadeDisponivel).to.eql(2);",
+                  "});",
+                  "pm.collectionVariables.set('livroId', livro.id);"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Cadastrar livro sem título (erro)",
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/livros",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"isbn\": \"000\",\n  \"autorIds\": [1],\n  \"categoriaId\": 1\n}" }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isbn\": \"000\",\n  \"autorIds\": [1],\n  \"categoriaId\": 1\n}"
+            }
           },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 400 (requisição inválida)', () => pm.response.to.have.status(400));",
-            "pm.test('Mensagem de erro do título', () => pm.expect(pm.response.json().erro).to.eql('O título é obrigatório'));"
-          ] } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 (requisição inválida)', () => pm.response.to.have.status(400));",
+                  "pm.test('Mensagem de erro do título', () => pm.expect(pm.response.json().erro).to.eql('O título é obrigatório'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Atualizar livro",
           "request": {
             "method": "PUT",
             "url": "{{baseUrl}}/livros/{{livroId}}",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"titulo\": \"O Alienista (Edição Revisada)\",\n  \"isbn\": \"978-8508133037\",\n  \"anoPublicacao\": 1882,\n  \"quantidadeDisponivel\": 2,\n  \"autorIds\": [1],\n  \"categoriaId\": 1\n}" }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"O Alienista (Edição Revisada)\",\n  \"isbn\": \"978-8508133037\",\n  \"anoPublicacao\": 1882,\n  \"quantidadeDisponivel\": 2,\n  \"autorIds\": [1],\n  \"categoriaId\": 1\n}"
+            }
           },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "pm.test('Título foi atualizado', () => pm.expect(pm.response.json().titulo).to.eql('O Alienista (Edição Revisada)'));"
-          ] } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Título foi atualizado', () => pm.expect(pm.response.json().titulo).to.eql('O Alienista (Edição Revisada)'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Buscar livro inexistente (erro)",
-          "request": { "method": "GET", "url": "{{baseUrl}}/livros/99999" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 404 (não encontrado)', () => pm.response.to.have.status(404));",
-            "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.eql('Livro não encontrado'));"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/livros/99999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404 (não encontrado)', () => pm.response.to.have.status(404));",
+                  "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.eql('Livro não encontrado'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -96,95 +486,193 @@
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/emprestimos",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": 1,\n  \"livroId\": {{livroId}}\n}" }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": 1,\n  \"livroId\": {{livroId}}\n}"
+            }
           },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 201 (criado)', () => pm.response.to.have.status(201));",
-            "const emp = pm.response.json();",
-            "pm.test('Empréstimo ATIVO, sem multa', () => {",
-            "  pm.expect(emp.status).to.eql('ATIVO');",
-            "  pm.expect(emp.multa).to.eql(0);",
-            "  pm.expect(emp.dataDevolucao).to.be.null;",
-            "});",
-            "pm.test('Prazo de devolução de 7 dias', () => {",
-            "  const dias = (new Date(emp.dataPrevistaDevolucao) - new Date(emp.dataEmprestimo)) / 86400000;",
-            "  pm.expect(dias).to.eql(7);",
-            "});",
-            "pm.collectionVariables.set('emprestimoId', emp.id);"
-          ] } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 (criado)', () => pm.response.to.have.status(201));",
+                  "const emp = pm.response.json();",
+                  "pm.test('Empréstimo ATIVO, sem multa', () => {",
+                  "  pm.expect(emp.status).to.eql('ATIVO');",
+                  "  pm.expect(emp.multa).to.eql(0);",
+                  "  pm.expect(emp.dataDevolucao).to.be.null;",
+                  "});",
+                  "pm.test('Prazo de devolução de 7 dias', () => {",
+                  "  const dias = (new Date(emp.dataPrevistaDevolucao) - new Date(emp.dataEmprestimo)) / 86400000;",
+                  "  pm.expect(dias).to.eql(7);",
+                  "});",
+                  "pm.collectionVariables.set('emprestimoId', emp.id);"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Estoque diminuiu após empréstimo",
-          "request": { "method": "GET", "url": "{{baseUrl}}/livros/{{livroId}}" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "pm.test('Quantidade disponível passou de 2 para 1', () => pm.expect(pm.response.json().quantidadeDisponivel).to.eql(1));"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/livros/{{livroId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Quantidade disponível passou de 2 para 1', () => pm.expect(pm.response.json().quantidadeDisponivel).to.eql(1));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Empréstimo com usuário inexistente (erro)",
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/emprestimos",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": 99999,\n  \"livroId\": 1\n}" }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": 99999,\n  \"livroId\": 1\n}"
+            }
           },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 404 (não encontrado)', () => pm.response.to.have.status(404));",
-            "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.eql('Usuário não encontrado'));"
-          ] } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404 (não encontrado)', () => pm.response.to.have.status(404));",
+                  "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.eql('Usuário não encontrado'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Listar empréstimos",
-          "request": { "method": "GET", "url": "{{baseUrl}}/emprestimos" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "pm.test('Contém o empréstimo criado', () => {",
-            "  const id = Number(pm.collectionVariables.get('emprestimoId'));",
-            "  pm.expect(pm.response.json().map(e => e.id)).to.include(id);",
-            "});"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/emprestimos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Contém o empréstimo criado', () => {",
+                  "  const id = Number(pm.collectionVariables.get('emprestimoId'));",
+                  "  pm.expect(pm.response.json().map(e => e.id)).to.include(id);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Listar empréstimos atrasados",
-          "request": { "method": "GET", "url": "{{baseUrl}}/emprestimos/atrasados" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "pm.test('Todos estão ATRASADOS e com multa', () => {",
-            "  pm.response.json().forEach(e => {",
-            "    pm.expect(e.status).to.eql('ATRASADO');",
-            "    pm.expect(e.multa).to.be.above(0);",
-            "  });",
-            "});"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/emprestimos/atrasados"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Todos estão ATRASADOS e com multa', () => {",
+                  "  pm.response.json().forEach(e => {",
+                  "    pm.expect(e.status).to.eql('ATRASADO');",
+                  "    pm.expect(e.multa).to.be.above(0);",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Registrar devolução",
-          "request": { "method": "PUT", "url": "{{baseUrl}}/emprestimos/{{emprestimoId}}/devolucao" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "pm.test('Status DEVOLVIDO com data de devolução', () => {",
-            "  const emp = pm.response.json();",
-            "  pm.expect(emp.status).to.eql('DEVOLVIDO');",
-            "  pm.expect(emp.dataDevolucao).to.not.be.null;",
-            "});"
-          ] } }]
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/emprestimos/{{emprestimoId}}/devolucao"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status DEVOLVIDO com data de devolução', () => {",
+                  "  const emp = pm.response.json();",
+                  "  pm.expect(emp.status).to.eql('DEVOLVIDO');",
+                  "  pm.expect(emp.dataDevolucao).to.not.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Devolver novamente (erro)",
-          "request": { "method": "PUT", "url": "{{baseUrl}}/emprestimos/{{emprestimoId}}/devolucao" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 422 (regra de negócio)', () => pm.response.to.have.status(422));",
-            "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.eql('Este empréstimo já foi devolvido'));"
-          ] } }]
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/emprestimos/{{emprestimoId}}/devolucao"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 422 (regra de negócio)', () => pm.response.to.have.status(422));",
+                  "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.eql('Este empréstimo já foi devolvido'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Estoque voltou após devolução",
-          "request": { "method": "GET", "url": "{{baseUrl}}/livros/{{livroId}}" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Quantidade disponível voltou para 2', () => pm.expect(pm.response.json().quantidadeDisponivel).to.eql(2));"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/livros/{{livroId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Quantidade disponível voltou para 2', () => pm.expect(pm.response.json().quantidadeDisponivel).to.eql(2));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -192,36 +680,140 @@
       "name": "Limpeza e outros",
       "item": [
         {
-          "name": "Remover livro",
-          "request": { "method": "DELETE", "url": "{{baseUrl}}/livros/{{livroId}}" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 204 (sem conteúdo)', () => pm.response.to.have.status(204));"
-          ] } }]
+          "name": "Remover livro com histórico de empréstimo (erro)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/livros/{{livroId}}",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409 (livro já foi emprestado)', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar livro descartável",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/livros",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Livro descartável\",\n  \"isbn\": \"000-0000000000\",\n  \"anoPublicacao\": 2024,\n  \"quantidadeDisponivel\": 1,\n  \"autorIds\": [\n    1\n  ],\n  \"categoriaId\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('livroTmpId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remover livro sem empréstimos",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/livros/{{livroTmpId}}",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 (sem conteúdo)', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Livro removido não existe mais",
-          "request": { "method": "GET", "url": "{{baseUrl}}/livros/{{livroId}}" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 404', () => pm.response.to.have.status(404));"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/livros/{{livroTmpId}}",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Listar usuários",
-          "request": { "method": "GET", "url": "{{baseUrl}}/usuarios" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "pm.test('Retorna uma lista', () => pm.expect(pm.response.json()).to.be.an('array'));"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/usuarios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna uma lista', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Rota inexistente (erro)",
-          "request": { "method": "GET", "url": "{{baseUrl}}/rota-inexistente" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Status 404', () => pm.response.to.have.status(404));",
-            "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.eql('Rota não encontrada'));"
-          ] } }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/rota-inexistente"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.eql('Rota não encontrada'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
 }

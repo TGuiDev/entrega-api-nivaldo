@@ -2,10 +2,10 @@ const { Router } = require('express');
 const livroController = require('./controllers/LivroController');
 const emprestimoController = require('./controllers/EmprestimoController');
 const authController = require('./controllers/AuthController');
+const autorController = require('./controllers/AutorController');
 const livroRepository = require('./repositories/LivroRepository');
 const emprestimoService = require('./services/EmprestimoService');
 const usuarioRepository = require('./repositories/UsuarioRepository');
-const autorRepository = require('./repositories/AutorRepository');
 const categoriaRepository = require('./repositories/CategoriaRepository');
 const { autenticar, exigirPerfil } = require('./middlewares/auth');
 const Perfil = require('./models/Perfil');
@@ -27,6 +27,13 @@ rotas.get('/livros/:id', livroController.buscarPorId);
 rotas.post('/livros', soBibliotecario, livroController.cadastrar);
 rotas.put('/livros/:id', soBibliotecario, livroController.atualizar);
 rotas.delete('/livros/:id', soBibliotecario, livroController.remover);
+
+// Autores: qualquer usuário consulta; só bibliotecário altera
+rotas.get('/autores', autorController.listar);
+rotas.get('/autores/:id', autorController.buscarPorId);
+rotas.post('/autores', soBibliotecario, autorController.cadastrar);
+rotas.put('/autores/:id', soBibliotecario, autorController.atualizar);
+rotas.delete('/autores/:id', soBibliotecario, autorController.remover);
 
 // Empréstimos (/atrasados vem antes de /:id para não ser confundido com um id)
 rotas.get('/emprestimos', emprestimoController.listar);
@@ -53,7 +60,6 @@ rotas.get('/estatisticas', soBibliotecario, async (req, res) => {
 
 // Consultas auxiliares
 rotas.get('/usuarios', soBibliotecario, async (req, res) => res.json(await usuarioRepository.findAll()));
-rotas.get('/autores', async (req, res) => res.json(await autorRepository.findAll()));
 rotas.get('/categorias', async (req, res) => res.json(await categoriaRepository.findAll()));
 
 module.exports = rotas;

@@ -43,13 +43,16 @@ export async function viewCatalogo({ usuario, conteudo }: Contexto) {
     const disp = l.quantidadeDisponivel > 0;
     return html`
       <article class="livro">
-        <div class="capa" style="${capa(l.titulo)}"><span>${l.titulo}</span></div>
+        <div class="capa" style="${capa(l.titulo)}" aria-hidden="true">
+          <span class="capa-titulo">${l.titulo}</span>
+          <span class="capa-autor">${nomes}</span>
+        </div>
         <div class="livro-info">
-          <span class="tag">${catPorId.get(l.categoriaId ?? 0)?.nome ?? 'Sem categoria'}</span>
+          <span class="categoria">${catPorId.get(l.categoriaId ?? 0)?.nome ?? 'Sem categoria'}</span>
           <h3>${l.titulo}</h3>
           <p class="muted">${nomes || 'Autor desconhecido'}${l.anoPublicacao ? ` · ${l.anoPublicacao}` : ''}</p>
           <div class="livro-rodape">
-            <span class="badge ${disp ? 'ok' : 'off'}">${disp ? `${l.quantidadeDisponivel} disp.` : 'Indisponível'}</span>
+            <span class="badge ${disp ? 'ok' : 'off'}">${disp ? `${l.quantidadeDisponivel} ${l.quantidadeDisponivel === 1 ? 'exemplar' : 'exemplares'}` : 'Indisponível'}</span>
             <button class="btn primary sm" data-emprestar="${l.id}" ${!disp && 'disabled'}>Emprestar</button>
           </div>
         </div>

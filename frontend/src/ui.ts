@@ -37,10 +37,16 @@ export function diasAte(iso: string): number {
 }
 
 // ---------- capa gerada a partir do título ----------
+// Cores de tecido de encadernação (fundo, texto). Cada título cai sempre na mesma.
+const TECIDOS: [string, string][] = [
+  ['#7a2e2a', '#f1e4d3'], ['#2f4a3a', '#e9e4d0'], ['#26384d', '#e6e2d6'], ['#8a6a2f', '#f6ecd2'],
+  ['#4a3a56', '#ece3ea'], ['#5b4636', '#efe4d2'], ['#34535a', '#e4ebe6'], ['#8b4a3c', '#f4e6dc'],
+];
 export function capa(titulo: string): string {
   let h = 0;
-  for (const c of titulo) h = (h * 31 + c.charCodeAt(0)) % 360;
-  return `background:linear-gradient(145deg,hsl(${h} 65% 42%),hsl(${(h + 40) % 360} 70% 28%))`;
+  for (const c of titulo) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const [fundo, texto] = TECIDOS[h % TECIDOS.length];
+  return `background:${fundo};color:${texto}`;
 }
 
 // ---------- toasts ----------
@@ -106,6 +112,7 @@ export const icones = {
   mais: '<path d="M12 5v14M5 12h14"/>',
   editar: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/>',
   lixo: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  pessoa: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   alerta: '<path d="M12 4 2 20h20zM12 10v5M12 18h.01"/>',
 };
 export const icone = (nome: keyof typeof icones) =>

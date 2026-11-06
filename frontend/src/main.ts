@@ -7,6 +7,7 @@ import { viewCatalogo } from './views/catalogo.ts';
 import { viewEmprestimos } from './views/emprestimos.ts';
 import { viewPainel } from './views/painel.ts';
 import { viewAcervo } from './views/acervo.ts';
+import { viewAutores } from './views/autores.ts';
 
 export interface Contexto {
   usuario: Usuario;
@@ -26,6 +27,7 @@ const rotas: Rota[] = [
   { caminho: '/emprestimos', titulo: 'Empréstimos', icone: 'lista', render: viewEmprestimos },
   { caminho: '/painel', titulo: 'Painel', icone: 'painel', soBibliotecario: true, render: viewPainel },
   { caminho: '/acervo', titulo: 'Acervo', icone: 'mais', soBibliotecario: true, render: viewAcervo },
+  { caminho: '/autores', titulo: 'Autores', icone: 'pessoa', soBibliotecario: true, render: viewAutores },
 ];
 
 const app = $('#app')!;

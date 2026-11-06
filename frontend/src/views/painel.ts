@@ -13,7 +13,7 @@ export async function viewPainel({ conteudo }: Contexto) {
     html`<div class="stat ${classe}"><span>${rotulo}</span><strong>${valor}</strong></div>`;
 
   montar(conteudo, html`
-    <div class="cabecalho"><div><h1>Painel</h1><p class="muted">Visão geral da biblioteca</p></div></div>
+    <div class="cabecalho"><div><h1>Painel</h1><p class="muted">Situação atual do acervo e dos empréstimos</p></div></div>
     <div class="stats">
       ${cartao('Títulos', est.titulos)}
       ${cartao('Exemplares disponíveis', est.exemplaresDisponiveis)}
@@ -37,6 +37,6 @@ export async function viewPainel({ conteudo }: Contexto) {
                 <div class="emp-acao"><span class="multa">${dinheiro(e.multa)}</span></div>
               </article>`;
           })
-        : html`<div class="vazio">Nenhum atraso. 🎉</div>`}
+        : html`<div class="vazio">Nenhum empréstimo atrasado.</div>`}
     </div>`);
 }

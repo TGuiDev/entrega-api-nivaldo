@@ -10,12 +10,12 @@ export function viewEntrar(app: HTMLElement) {
       <div class="auth">
         <section class="auth-hero">
           <div class="marca grande">${icone('livro')}<span>Biblioteca</span></div>
-          <h1>Encontre, empreste e devolva sem fila.</h1>
-          <p>Consulte o acervo, acompanhe seus prazos e fique de olho nas multas — tudo em um só lugar.</p>
+          <h1>Acervo, empréstimos e prazos num só lugar.</h1>
+          <p>Consulte os livros, retire exemplares por até sete dias e acompanhe devoluções e multas.</p>
         </section>
         <section class="auth-card">
-          <h2>${criar ? 'Criar conta' : 'Bem-vindo de volta'}</h2>
-          <p class="muted">${criar ? 'Leva menos de um minuto.' : 'Entre com seu e-mail e senha.'}</p>
+          <h2>${criar ? 'Criar conta' : 'Entrar'}</h2>
+          <p class="muted">${criar ? 'Cadastro de leitor, sem custo.' : 'Use o e-mail e a senha cadastrados.'}</p>
           <form id="form" class="form" novalidate>
             ${criar && html`
               <label>Nome<input name="nome" autocomplete="name" required /></label>

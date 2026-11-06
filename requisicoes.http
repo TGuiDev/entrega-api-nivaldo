@@ -1,14 +1,50 @@
-### Testes da API (use a extensão "REST Client" do VS Code e clique em "Send Request")
+### Testes da API (extensão "REST Client" do VS Code: clique em "Send Request").
+### Rode primeiro o "Login": o token é guardado em @token e usado nas demais requisições.
 @base = http://localhost:3000
 
-### Listar livros
-GET {{base}}/livros
+# ───────────── Autenticação ─────────────
+
+### Login (bibliotecária de demonstração)
+# @name login
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana@email.com",
+  "senha": "123456"
+}
+
+###
+@token = {{login.response.body.$.token}}
+
+### Criar conta de leitor
+POST {{base}}/auth/registrar
+Content-Type: application/json
+
+{
+  "nome": "Maria Oliveira",
+  "email": "maria@email.com",
+  "telefone": "(19) 99999-3333",
+  "senha": "senha123"
+}
+
+### Usuário logado
+GET {{base}}/auth/me
+Authorization: Bearer {{token}}
+
+# ───────────── Livros ─────────────
+
+### Listar livros (filtros opcionais: busca, categoriaId, autorId, disponivel=true)
+GET {{base}}/livros?busca=clean&disponivel=true
+Authorization: Bearer {{token}}
 
 ### Buscar livro por ID
 GET {{base}}/livros/1
+Authorization: Bearer {{token}}
 
-### Cadastrar livro
+### Cadastrar livro (bibliotecário)
 POST {{base}}/livros
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -20,8 +56,9 @@ Content-Type: application/json
   "categoriaId": 1
 }
 
-### Atualizar livro
+### Atualizar livro (bibliotecário)
 PUT {{base}}/livros/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -33,14 +70,53 @@ Content-Type: application/json
   "categoriaId": 1
 }
 
-### Remover livro
+### Remover livro (bibliotecário; 409 se já teve empréstimos)
 DELETE {{base}}/livros/3
+Authorization: Bearer {{token}}
 
-### Listar empréstimos
+# ───────────── Autores ─────────────
+
+### Listar autores
+GET {{base}}/autores
+Authorization: Bearer {{token}}
+
+### Buscar autor por ID
+GET {{base}}/autores/1
+Authorization: Bearer {{token}}
+
+### Cadastrar autor (bibliotecário)
+POST {{base}}/autores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Clarice Lispector",
+  "nacionalidade": "Brasileira"
+}
+
+### Atualizar autor (bibliotecário)
+PUT {{base}}/autores/5
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Clarice Lispector",
+  "nacionalidade": "Ucraniana-brasileira"
+}
+
+### Remover autor (bibliotecário; 409 se tiver livros)
+DELETE {{base}}/autores/5
+Authorization: Bearer {{token}}
+
+# ───────────── Empréstimos ─────────────
+
+### Listar empréstimos (leitor vê só os próprios)
 GET {{base}}/emprestimos
+Authorization: Bearer {{token}}
 
-### Realizar empréstimo
+### Realizar empréstimo (bibliotecário pode informar usuarioId)
 POST {{base}}/emprestimos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -50,9 +126,25 @@ Content-Type: application/json
 
 ### Registrar devolução
 PUT {{base}}/emprestimos/1/devolucao
+Authorization: Bearer {{token}}
 
-### Listar empréstimos atrasados
+### Listar empréstimos atrasados (bibliotecário)
 GET {{base}}/emprestimos/atrasados
+Authorization: Bearer {{token}}
 
-### Dados auxiliares
+# ───────────── Consultas auxiliares ─────────────
+
+### Categorias
+GET {{base}}/categorias
+Authorization: Bearer {{token}}
+
+### Usuários (bibliotecário)
 GET {{base}}/usuarios
+Authorization: Bearer {{token}}
+
+### Estatísticas do painel (bibliotecário)
+GET {{base}}/estatisticas
+Authorization: Bearer {{token}}
+
+### Saúde da API (pública)
+GET {{base}}/api/saude

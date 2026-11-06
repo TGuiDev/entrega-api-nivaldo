@@ -5,7 +5,9 @@ const Perfil = require('../models/Perfil');
 const HttpError = require('../utils/HttpError');
 const { gerarHash, conferir } = require('../utils/senha');
 
-const SEGREDO = process.env.JWT_SECRET || 'segredo-de-desenvolvimento';
+// Em produção o segredo é obrigatório: um valor padrão público permitiria forjar tokens.
+const SEGREDO = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'segredo-de-desenvolvimento');
+if (!SEGREDO) throw new Error('Defina a variável de ambiente JWT_SECRET (obrigatória em produção)');
 const EXPIRACAO = '8h';
 
 class AuthService {

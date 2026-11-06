@@ -34,6 +34,11 @@ export interface Autor {
   nacionalidade?: string | null;
 }
 
+export interface AutorForm {
+  nome: string;
+  nacionalidade: string;
+}
+
 export interface Categoria {
   id: number;
   nome: string;

@@ -18,6 +18,22 @@ classDiagram
         +listarAtrasados() List~Emprestimo~
     }
 
+    class AutorController {
+        -AutorService autorService
+        +listar() List~Autor~
+        +buscarPorId(Long id) Autor
+        +cadastrar(Autor autor) Autor
+        +atualizar(Long id, Autor autor) Autor
+        +remover(Long id) void
+    }
+
+    class AuthController {
+        -AuthService authService
+        +login(email, senha) Sessao
+        +registrar(Usuario usuario) Sessao
+        +me() Usuario
+    }
+
     %% ===== Camada de Serviço (Regras de negócio) =====
     class LivroService {
         -LivroRepository livroRepository
@@ -25,6 +41,21 @@ classDiagram
         +buscarPorId(Long id) Livro
         +salvar(Livro livro) Livro
         +excluir(Long id) void
+    }
+
+    class AutorService {
+        -AutorRepository autorRepository
+        +listarTodos() List~Autor~
+        +buscarPorId(Long id) Autor
+        +salvar(Autor autor) Autor
+        +excluir(Long id) void
+    }
+
+    class AuthService {
+        -UsuarioRepository usuarioRepository
+        +login(String email, String senha) Sessao
+        +registrar(Usuario usuario) Sessao
+        +verificarToken(String token) Claims
     }
 
     class EmprestimoService {
@@ -44,6 +75,15 @@ classDiagram
         +deleteById(Long id) void
     }
 
+    class AutorRepository {
+        <<interface>>
+        +findAll() List~Autor~
+        +findById(Long id) Autor
+        +save(Autor autor) Autor
+        +deleteById(Long id) void
+        +existeComNome(String nome) boolean
+    }
+
     class EmprestimoRepository {
         <<interface>>
         +findAll() List~Emprestimo~
@@ -58,7 +98,14 @@ classDiagram
         -String nome
         -String email
         -String telefone
+        -Perfil perfil
         +podeEmprestar() boolean
+    }
+
+    class Perfil {
+        <<enumeration>>
+        LEITOR
+        BIBLIOTECARIO
     }
 
     class Livro {
@@ -104,6 +151,9 @@ classDiagram
     %% ===== Relacionamentos entre camadas =====
     LivroController --> LivroService
     EmprestimoController --> EmprestimoService
+    AutorController --> AutorService
+    AuthController --> AuthService
+    AutorService --> AutorRepository
     LivroService --> LivroRepository
     EmprestimoService --> EmprestimoRepository
     EmprestimoService --> LivroService
@@ -114,3 +164,4 @@ classDiagram
     Usuario "1" -- "0..*" Emprestimo : realiza
     Livro "1" -- "0..*" Emprestimo : emprestado em
     Emprestimo --> StatusEmprestimo
+    Usuario --> Perfil

@@ -1,0 +1,21 @@
+server {
+  listen 80;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # DNS resolvido em tempo de requisição: o nginx sobe mesmo se a API estiver fora do ar
+  resolver 127.0.0.11 valid=10s;
+
+  location /api/ {
+    set $api http://${API_UPSTREAM};
+    proxy_pass $api;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+}
